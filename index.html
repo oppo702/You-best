@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>تسجيل الكشافة - ثانوية الأمير عبد المجيد بن عبد العزيز</title>
+    <title>نظام تسجيل الكشافة - ثانوية الأمير عبد المجيد بن عبد العزيز</title>
     <style>
         * {
             box-sizing: border-box;
@@ -16,7 +16,7 @@
             background-color: #f4f7f6;
             color: #333;
             display: flex;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
             min-height: 100vh;
             padding: 20px;
@@ -25,11 +25,12 @@
         .container {
             background-color: #ffffff;
             width: 100%;
-            max-width: 600px;
+            max-width: 800px;
             border-radius: 12px;
             box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
             overflow: hidden;
             border-top: 6px solid #1e5631;
+            margin-bottom: 20px;
         }
 
         .header {
@@ -37,6 +38,7 @@
             color: #ffffff;
             padding: 25px 20px;
             text-align: center;
+            position: relative;
         }
 
         .header h1 {
@@ -49,12 +51,40 @@
             opacity: 0.9;
         }
 
-        form {
+        .admin-nav-btn {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: white;
+            border: 1px solid white;
+            padding: 6px 12px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: 0.3s;
+        }
+
+        .admin-nav-btn:hover {
+            background-color: white;
+            color: #1e5631;
+        }
+
+        form, .admin-section {
             padding: 25px;
         }
 
         .form-group {
             margin-bottom: 18px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
         }
 
         label {
@@ -67,6 +97,7 @@
 
         input[type="text"],
         input[type="tel"],
+        input[type="password"],
         select,
         textarea {
             width: 100%;
@@ -83,7 +114,7 @@
             box-shadow: 0 0 5px rgba(30, 86, 49, 0.3);
         }
 
-        .btn-submit {
+        .btn-submit, .btn-action {
             width: 100%;
             background-color: #1e5631;
             color: white;
@@ -94,11 +125,36 @@
             border-radius: 6px;
             cursor: pointer;
             transition: background-color 0.3s ease;
-            margin-top: 10px;
         }
 
-        .btn-submit:hover {
+        .btn-submit:hover, .btn-action:hover {
             background-color: #143d22;
+        }
+
+        .btn-danger {
+            background-color: #dc3545;
+            padding: 6px 12px;
+            font-size: 0.85rem;
+            border-radius: 4px;
+            color: white;
+            border: none;
+            cursor: pointer;
+            transition: 0.2s;
+            font-weight: bold;
+        }
+
+        .btn-danger:hover {
+            background-color: #bd2130;
+        }
+
+        .btn-export {
+            background-color: #0275d8;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
         }
 
         .success-message {
@@ -111,67 +167,271 @@
             text-align: center;
             border: 1px solid #c3e6cb;
         }
+
+        /* الجدول الخاص بلوحة التحكم */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: right;
+            font-size: 0.88rem;
+        }
+
+        th {
+            background-color: #1e5631;
+            color: white;
+        }
+
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .hidden {
+            display: none;
+        }
     </style>
 </head>
 <body>
 
 <div class="container">
     <div class="header">
+        <button class="admin-nav-btn" onclick="toggleAdminView()">لوحة المشرف 🔑</button>
         <h1>الفرقة الكشفية</h1>
         <p>ثانوية الأمير عبد المجيد بن عبد العزيز (بنين)</p>
     </div>
 
-    <div id="successMessage" class="success-message">
-        تم استلام طلب الانضمام بنجاح! سيتم التواصل معك قريباً.
+    <!-- 1. نموذج تسجيل الطلاب -->
+    <div id="studentFormView">
+        <div id="successMessage" class="success-message">
+            تم استلام طلب الانضمام بنجاح! شكراً لتسجيلك.
+        </div>
+
+        <form id="scoutForm" onsubmit="handleStudentSubmit(event)">
+            <div class="form-group">
+                <label for="fullName">اسم الطالب الثلاثي *</label>
+                <input type="text" id="fullName" required placeholder="أدخل اسمك الكامل">
+            </div>
+
+            <div class="form-group">
+                <label for="nationalId">رقم الهوية الوطنية / الإقامة *</label>
+                <input type="text" id="nationalId" required maxlength="10" pattern="[0-9]{10}" placeholder="أدخل 10 أرقام">
+            </div>
+
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="grade">الصف الدراسي *</label>
+                    <select id="grade" required>
+                        <option value="">اختر الصف...</option>
+                        <option value="السنة الأولى مشتركة">السنة الأولى مشتركة</option>
+                        <option value="الصف الثاني ثانوي">الصف الثاني ثانوي</option>
+                        <option value="الصف الثالث ثانوي">الصف الثالث ثانوي</option>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label for="section">الشعبة *</label>
+                    <select id="section" required>
+                        <option value="">اختر الشعبة...</option>
+                        <option value="1">شعبة 1</option>
+                        <option value="2">شعبة 2</option>
+                        <option value="3">شعبة 3</option>
+                        <option value="4">شعبة 4</option>
+                        <option value="5">شعبة 5</option>
+                        <option value="6">شعبة 6</option>
+                        <option value="7">شعبة 7</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-group">
+                <label for="phone">رقم جوال الطالب *</label>
+                <input type="tel" id="phone" required placeholder="05xxxxxxxx">
+            </div>
+
+            <div class="form-group">
+                <label for="skills">المهارات أو الهوايات (اختياري)</label>
+                <textarea id="skills" rows="3" placeholder="مثل: الإلقاء، تنظيم الفعاليات، الإسعافات الأولية..."></textarea>
+            </div>
+
+            <button type="submit" class="btn-submit">إرسال طلب الانضمام</button>
+        </form>
     </div>
 
-    <form id="scoutForm" onsubmit="handleSubmit(event)">
+    <!-- 2. شاشة تسجيل دخول المشرف -->
+    <div id="adminLoginView" class="admin-section hidden">
+        <h2 style="margin-bottom: 15px; text-align: center;">تسجيل دخول المشرف</h2>
         <div class="form-group">
-            <label for="fullName">اسم الطالب الثلاثي *</label>
-            <input type="text" id="fullName" required placeholder="أدخل اسمك الكامل">
+            <label for="adminPassword">كلمة المرور:</label>
+            <input type="password" id="adminPassword" placeholder="أدخل كلمة المرور الخاصة بالمشرف">
+        </div>
+        <button type="button" class="btn-action" onclick="verifyAdmin()">دخول</button>
+        <p id="loginError" style="color: red; margin-top: 10px; display: none; text-align: center;">كلمة المرور غير صحيحة!</p>
+    </div>
+
+    <!-- 3. لوحة تحكم المشرف (عرض الطلاب المسجلين وإدارتهم) -->
+    <div id="adminDashboardView" class="admin-section hidden">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+            <h2>قائمة الطلاب المسجلين</h2>
+            <button class="btn-export" onclick="exportToCSV()">تصدير إلى Excel 📥</button>
         </div>
 
-        <div class="form-group">
-            <label for="nationalId">رقم الهوية الوطنية / الإقامة *</label>
-            <input type="text" id="nationalId" required maxlength="10" placeholder="أدخل 10 أرقام">
+        <div style="overflow-x: auto;">
+            <table id="studentsTable">
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>الاسم الثلاثي</th>
+                        <th>الهوية الوطنية</th>
+                        <th>الصف</th>
+                        <th>الشعبة</th>
+                        <th>رقم الجوال</th>
+                        <th>المهارات</th>
+                        <th>حذف الطالب</th>
+                    </tr>
+                </thead>
+                <tbody id="studentsTableBody">
+                    <!-- تُضاف البيانات هنا ديناميكياً -->
+                </tbody>
+            </table>
         </div>
-
-        <div class="form-group">
-            <label for="grade">الصف الدراسي *</label>
-            <select id="grade" required>
-                <option value="">اختر الصف...</option>
-                <option value="السنة الأولى مشتركة">السنة الأولى مشتركة</option>
-                <option value="الصف الثاني ثانوي">الصف الثاني ثانوي</option>
-                <option value="الصف الثالث ثانوي">الصف الثالث ثانوي</option>
-            </select>
+        
+        <div style="margin-top: 20px; display: flex; gap: 10px;">
+            <button type="button" class="btn-action" style="background-color: #6c757d;" onclick="logoutAdmin()">تسجيل الخروج</button>
         </div>
-
-        <div class="form-group">
-            <label for="phone">رقم جوال الطالب *</label>
-            <input type="tel" id="phone" required placeholder="05xxxxxxxx">
-        </div>
-
-        <div class="form-group">
-            <label for="parentPhone">رقم جوال ولي الأمر *</label>
-            <input type="tel" id="parentPhone" required placeholder="05xxxxxxxx">
-        </div>
-
-        <div class="form-group">
-            <label for="skills">المهارات أو الهوايات (اختياري)</label>
-            <textarea id="skills" rows="3" placeholder="مثل: الإلقاء، تنظيم الفعاليات، الإسعافات الأولية، الرسم..."></textarea>
-        </div>
-
-        <button type="submit" class="btn-submit">إرسال طلب الانضمام</button>
-    </form>
+    </div>
 </div>
 
 <script>
-    function handleSubmit(event) {
+    const ADMIN_PASS = "Hozan@2010hn";
+
+    // جلب البيانات المخزنة مسبقاً
+    function getStoredStudents() {
+        const students = localStorage.getItem('scout_students');
+        return students ? JSON.parse(students) : [];
+    }
+
+    // حفظ طلب الطالب
+    function handleStudentSubmit(event) {
         event.preventDefault();
         
-        // إخفاء النموذج وإظهار رسالة النجاح
+        const newStudent = {
+            id: Date.now(),
+            fullName: document.getElementById('fullName').value,
+            nationalId: document.getElementById('nationalId').value,
+            grade: document.getElementById('grade').value,
+            section: document.getElementById('section').value,
+            phone: document.getElementById('phone').value,
+            skills: document.getElementById('skills').value || 'لا يوجد'
+        };
+
+        const students = getStoredStudents();
+        students.push(newStudent);
+        localStorage.setItem('scout_students', JSON.stringify(students));
+
+        document.getElementById('scoutForm').reset();
         document.getElementById('scoutForm').style.display = 'none';
         document.getElementById('successMessage').style.display = 'block';
+
+        setTimeout(() => {
+            document.getElementById('scoutForm').style.display = 'block';
+            document.getElementById('successMessage').style.display = 'none';
+        }, 3000);
+    }
+
+    // التنقل إلى لوحة التحكم
+    function toggleAdminView() {
+        document.getElementById('studentFormView').classList.add('hidden');
+        document.getElementById('adminLoginView').classList.remove('hidden');
+        document.getElementById('adminDashboardView').classList.add('hidden');
+    }
+
+    // التحقق من كلمة المرور
+    function verifyAdmin() {
+        const inputPass = document.getElementById('adminPassword').value;
+        if (inputPass === ADMIN_PASS) {
+            document.getElementById('adminLoginView').classList.add('hidden');
+            document.getElementById('adminDashboardView').classList.remove('hidden');
+            document.getElementById('loginError').style.display = 'none';
+            document.getElementById('adminPassword').value = '';
+            renderTable();
+        } else {
+            document.getElementById('loginError').style.display = 'block';
+        }
+    }
+
+    // عرض الطلاب في الجدول مع حقل الحذف
+    function renderTable() {
+        const students = getStoredStudents();
+        const tbody = document.getElementById('studentsTableBody');
+        tbody.innerHTML = '';
+
+        if (students.length === 0) {
+            tbody.innerHTML = '<tr><td colspan="8" style="text-align: center;">لا يوجد طلاب مسجلون حالياً.</td></tr>';
+            return;
+        }
+
+        students.forEach((student, index) => {
+            const row = document.createElement('tr');
+            row.innerHTML = `
+                <td>${index + 1}</td>
+                <td><strong>${student.fullName}</strong></td>
+                <td>${student.nationalId}</td>
+                <td>${student.grade}</td>
+                <td>شعبة ${student.section}</td>
+                <td>${student.phone}</td>
+                <td>${student.skills}</td>
+                <td style="text-align: center;">
+                    <button class="btn-danger" onclick="deleteStudent(${student.id}, '${student.fullName}')">🗑️ حذف</button>
+                </td>
+            `;
+            tbody.appendChild(row);
+        });
+    }
+
+    // خاصية حذف طالب في أي وقت
+    function deleteStudent(id, studentName) {
+        if (confirm(`هل أنت تأكد من إزالة الطالب (${studentName}) من سجل الكشافة؟`)) {
+            let students = getStoredStudents();
+            students = students.filter(s => s.id !== id);
+            localStorage.setItem('scout_students', JSON.stringify(students));
+            renderTable(); // تحديث الجدول فوراً بعد الحذف
+        }
+    }
+
+    // تسجيل الخروج والعودة لصفحة التسجيل
+    function logoutAdmin() {
+        document.getElementById('adminDashboardView').classList.add('hidden');
+        document.getElementById('studentFormView').classList.remove('hidden');
+    }
+
+    // تصدير البيانات إلى ملف CSV / Excel
+    function exportToCSV() {
+        const students = getStoredStudents();
+        if (students.length === 0) {
+            alert('لا توجد بيانات لتصديرها!');
+            return;
+        }
+
+        let csvContent = "\uFEFFالاسم الثلاثي,رقم الهوية,الصف الدراسي,الشعبة,رقم الجوال,المهارات\n";
+        students.forEach(s => {
+            csvContent += `"${s.fullName}","${s.nationalId}","${s.grade}","شعبة ${s.section}","${s.phone}","${s.skills}"\n`;
+        });
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.setAttribute('download', 'مسجلي_الكشافة.csv');
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
     }
 </script>
 
